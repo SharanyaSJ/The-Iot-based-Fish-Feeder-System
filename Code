@@ -1,0 +1,159 @@
+#define BLYNK_TEMPLATE_ID "TMPL34C7v5L7D"
+#define BLYNK_TEMPLATE_NAME "Fish Feeding"
+#define BLYNK_AUTH_TOKEN "sqgW4FM3G3hFcqcJ4J-bO6vIl7bk24Xr"
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+const int temp = D3; 
+const int echoPin1 = D4;
+const int trigPin1 = D5;
+const int light1 = D1;
+const int light2 = D2;
+#include<Servo.h>
+
+Servo servo1;
+
+#define VPIN_BUTTON_1    V1
+#define VPIN_BUTTON_2    V2
+
+#define WIFI_LED      16
+
+const int Relay1 = D7;
+const int Alarm = D8;
+
+long duration1;
+int distance1;
+
+bool isconnected = false;
+
+long previousMillis = 0;
+long interval = 2000; //Read sensor each 2 seconds
+
+char auth[] = "sqgW4FM3G3hFcqcJ4J-bO6vIl7bk24Xr"; //Auth code sent via Email
+char ssid[] = "iotproject1234";
+char pass[] = "iotproject1234";
+BlynkTimer timer;
+ 
+BLYNK_WRITE(V3) {
+  bool value1 = param.asInt();
+  // Check these values and turn the relay1 ON and OFF
+  if (value1 == 1) {
+  digitalWrite(D2,HIGH);
+  delay(2000);
+  digitalWrite(D2,LOW);
+  delay(500);
+  digitalWrite(D1,HIGH);
+  delay(2000);
+  digitalWrite(D1,LOW);
+  delay(500);
+
+  } 
+}
+void setup() {
+
+pinMode(trigPin1, OUTPUT); // Sets the trigPin as an Output
+pinMode(echoPin1, INPUT); 
+pinMode(temp, INPUT_PULLUP);
+pinMode(Relay1, OUTPUT);
+pinMode(Alarm, OUTPUT);
+pinMode(light1, OUTPUT);
+pinMode(light2, OUTPUT);
+Serial.begin(9600);
+   servo1.attach(D6);
+delay(1000);
+servo1.write(0);
+digitalWrite(D1,LOW);
+digitalWrite(D2,LOW);
+digitalWrite(D7,LOW);
+digitalWrite(D8,LOW);
+  Blynk.begin(auth, ssid, pass);
+   timer.setInterval(2000L, checkBlynkStatus);
+    Blynk.config(auth);
+  delay(1000);
+pinMode(WIFI_LED, OUTPUT);
+digitalWrite(WIFI_LED, HIGH);
+}
+
+void checkBlynkStatus() { // called every 2 seconds by SimpleTimer
+  getSensorData();
+  isconnected = Blynk.connected();
+  if (isconnected == true) {
+    digitalWrite(WIFI_LED, LOW);
+    sendSensorData();
+    //Serial.println("Blynk Connected");
+  }
+  else{
+    digitalWrite(WIFI_LED, HIGH);
+    Serial.println("Blynk Not Connected");
+  }
+}
+void getSensorData()
+{
+
+    
+     
+  }
+void sendSensorData()
+{  
+    
+}
+void loop() {
+
+
+digitalWrite(trigPin1, LOW);
+delayMicroseconds(2);
+
+// Sets the trigPin on HIGH state for 10 micro seconds
+digitalWrite(trigPin1, HIGH);
+delayMicroseconds(10);
+digitalWrite(trigPin1, LOW);
+
+// Reads the echoPin, returns the sound wave travel time in microseconds
+duration1 = pulseIn(echoPin1, HIGH);
+
+// Calculating the distance
+distance1= duration1 *0.034/2;
+
+// Prints the distance on the Serial Monitor
+Serial.print("Distance1: ");
+Serial.println(distance1);
+Blynk.virtualWrite(V2,distance1);
+
+ 
+  if (distance1<=15)
+  {
+     Blynk.logEvent("Alert", "PUMP ON"); 
+     digitalWrite(Relay1,HIGH);
+ delay(4000);
+ digitalWrite(Relay1,LOW);
+    
+  }
+  if (distance1<=30 && distance1>=20 )
+  {
+     Blynk.logEvent("Alert", " Water Level Is LOW "); 
+     digitalWrite(Relay1,LOW);
+     digitalWrite(Alarm,HIGH);
+ delay(2000);
+    digitalWrite(Alarm,LOW);
+    delay(1000);
+  }
+ if (digitalRead(D3)==0)
+{
+  Blynk.logEvent("Alert", "Over Temperature");   
+Blynk.virtualWrite(VPIN_BUTTON_1, "Temperature Is HIGH");
+     digitalWrite(Alarm,HIGH);
+     
+     delay(1000);
+     digitalWrite(Alarm,LOW);
+delay(1000);
+Blynk.virtualWrite(VPIN_BUTTON_1, "Normal");
+  }
+
+{
+  
+  Blynk.run();
+  timer.run();
+ 
+}
+  
+}
